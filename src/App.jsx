@@ -8,8 +8,8 @@ const BASE_URL =
 
 const App = () => {
   const [currencyOptions, setCurrencyOptions] = useState([]);
-  const [fromCurrency, setFromCurrency] = useState();
-  const [toCurrency, setToCurrency] = useState();
+  const [fromCurrency, setFromCurrency] = useState("USD");
+  const [toCurrency, setToCurrency] = useState("AED");
   const [exchangeRates, setExchangeRates] = useState();
   const [amount, setAmount] = useState(1);
   const [amountInFromCurrency, setAmountInFromCurrency] = useState(true);
@@ -25,7 +25,6 @@ const App = () => {
   } else if (!isNaN(amount) && !isNaN(exchangeRates) && exchangeRates !== 0) {
     toAmount = amount;
     fromAmount = amount / exchangeRates;
-    console.log(fromAmount);
   } else {
     // Handle the case when values are not valid numbers
     toAmount = 0;
@@ -45,41 +44,22 @@ const App = () => {
       });
   }, []);
 
-  const fetchData = async () => {
-    try {
-      if (fromCurrency != null && toCurrency != null) {
-        const response = await axios.get(
-          `https://api.fastforex.io/convert?from=${fromCurrency}&to=${toCurrency}&amount=${amount}&api_key=1b348172d6-a8c6d80dfc-s80gjn`
-        );
+  const fetchData = () =>
+    axios
+      .get(
+        `https://api.fastforex.io/convert?from=${fromCurrency}&to=${toCurrency}&amount=${amount}&api_key=1b348172d6-a8c6d80dfc-s80gjn`
+      )
+      .then((data) => {
+        console.log(data.data.result.rate);
+        setExchangeRates(data.data.result.rate);
+      })
+      .catch((e) => {
+        console.error("Error fetching data:", e);
+      });
 
-        console.log(response.data.result.rate);
-
-        // if (data && data.results && data.results[toCurrency] !== undefined) {
-        setExchangeRates(response.data.result.rate);
-        // } else {
-        //   console.error(
-        //     "Invalid API response structure. Check the response data structure."
-        //   );
-        // }
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  };
-
-  useEffect(() => {
-    // if (fromCurrency != null && toCurrency != null) {
-    //   fetch(
-    //     `https://api.fastforex.io/convert?from=${fromCurrency}&to=${toCurrency}&amount=${amount}&api_key=1b348172d6-a8c6d80dfc-s80gjn`
-    //   )
-    //     .then((res) => res.json())
-    //     .then((data) =>
-    //       //  console.log(data.result.rate)
-    //       setExchangeRates(data.result.rate)
-    //     );
-    // }
-    fetchData();
-  }, [fromCurrency, toCurrency]);
+  // useEffect(() => {
+  //   fetchData();
+  // }, [fromCurrency, toCurrency]);
 
   function handleFromAmountChange(e) {
     setAmount(e.target.value);
@@ -96,7 +76,10 @@ const App = () => {
       <CurrencyRow
         currencyOptions={currencyOptions}
         selectedCurrency={fromCurrency}
-        onChangeCurrency={(e) => setFromCurrency(e.target.value)}
+        onChangeCurrency={(e) => {
+          setFromCurrency(e.target.value);
+          fetchData();
+        }}
         amount={fromAmount}
         onChangeAmount={handleFromAmountChange}
       />
@@ -104,7 +87,10 @@ const App = () => {
       <CurrencyRow
         currencyOptions={currencyOptions}
         selectedCurrency={toCurrency}
-        onChangeCurrency={(e) => setToCurrency(e.target.value)}
+        onChangeCurrency={(e) => {
+          setToCurrency(e.target.value);
+          fetchData();
+        }}
         amount={toAmount}
         onChangeAmount={handleToAmountChange}
       />
